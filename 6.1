@@ -1,0 +1,46 @@
+// Middleware Implementation for Logging and Bearer Token Authentication
+
+const express = require('express');
+const app = express();
+
+// ===== Middleware 1: Logging =====
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// ===== Middleware 2: Bearer Token Authentication =====
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header missing' });
+  }
+
+  const [type, token] = authHeader.split(' ');
+
+  if (type !== 'Bearer' || token !== 'mysecrettoken') {
+    return res.status(403).json({ error: 'Invalid or missing Bearer token' });
+  }
+
+  next(); // Token is valid → proceed to the route
+}
+
+// ===== Routes =====
+
+// Public route (accessible without authentication)
+app.get('/public', (req, res) => {
+  res.json({ message: 'This is a public route. No token required.' });
+});
+
+// Protected route (requires valid Bearer token)
+app.get('/protected', authenticateToken, (req, res) => {
+  res.json({ message: 'Access granted to protected route!' });
+});
+
+// ===== Start Server =====
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
